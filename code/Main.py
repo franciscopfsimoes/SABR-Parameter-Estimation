@@ -1,58 +1,44 @@
-from Black import blackPrice
+#Useful Python packages
+import matplotlib.pyplot as plt
 import numpy as np
 import math
-from SABR import impVol
-import matplotlib.pyplot as plt
 
-'''
-par = input("Do you have initial parameters alpha, beta, rho? (Y or N?)")
+#Pre-processing/misc algorithms
+import ExcelDate as date
+import DataPreProcessing as dt
 
-if par == 'Y':
+#Model specific algorithms
+import Black
+import SABR
 
-    print('Enter the parameters: ')
+# Initial conditions
+r = 0.019 #interest free rate (set to LIBROR rate at the time of the training data)
+iscall = 0 #type of options used for training (0 = put; 1 = call)
 
-    alpha = float(input("alpha :"))
-    beta = float(input("beta :"))
-    rho = float(input("rho :"))
+#Preprocessing data
+arr = dt.preprocess("Data.txt")
 
-else:
+spot = list(map(int, arr[:,0])) #Spot price of the underlying
+matu = list(map(int, arr[:,1])) #Maturity date of the contract (in Excel1900)
+strike = list(map(int, arr[:, 2])) #Strike price of the option
+initime = list(map(int, arr[:, 5])) #Inital date of the contract (in Excel1900)
+premium = list(map(float, arr[:, 8])) #Market price of the contract
 
-    alpha = 1
-    beta = 1
-    rho = 1
+#Auxilary Arrays
+vol = [] #Volatility Array
+S0K = [] #S0/K Array
 
-print('Enter the market data and specifics of your request: ')
+for i in range(len(spot)):
 
-f = float(input("Foward price of the underlying :"))
-Vv = float(input("Volatility of the volatility :"))
-K = float(input("Strike price :"))
-T = float(input("Time to maturity :"))
-r = float(input("Risk free interest rate :"))
-'''
+    duration = (matu[i] - initime[i])/365 #Duration of the ith contract (in years)
 
-alpha = 0.5
-beta = 1
-rho = 0.5
-f = 5
-Vv = 0.5
-T = 5
-r = 0.05
-a = 1
-b= 1
-'''K = 3
-
-v = impVol(alpha, beta, rho, Vv, K, f, T)'''
-K = np.arange(0.1, 20, 0.1)
-vol = []
-
-for k in K:
-    v = impVol(alpha, beta, rho, Vv, k, f, T)
+    # Black's Implied Volatility of the ith contract
+    v = Black.Vol(spot[i], strike[i], duration, premium[i], r, iscall)
     vol.append(v)
-    
-plt.plot(K/f, vol)
+
+    # S0/K of the ith contract
+    x = spot[i]/strike[i]
+    S0K.append(x)
+
+plt.plot(S0K, vol, 'ro')
 plt.show()
-
-'''volB = impVol(alpha, beta, rho, Vv, K, f, T)
-p = blackPrice(f, K, T, volB, r)'''
-
-'''print('The price of the call is: ', p)'''
