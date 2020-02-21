@@ -13,11 +13,18 @@ def D2(d1, T, vol): #Returns value of function d2 in Black-Scholes' pricing form
     return  d1 - vol*math.sqrt(T)
 
 
-def Vega(S, K, T, r, vol): #Returns the Black-Scholes' greek Vega
+def Vega(S, K, T, r, vol, iscall): #Returns the Black-Scholes' greek Vega
 
     d1 = D1(S, K, T, r, vol)
 
-    vega = S * norm.cdf(d1, 0.0, 1.0) * np.sqrt(T)
+    if iscall == 2:
+
+        vega = 2 * S * norm.cdf(d1, 0.0, 1.0) * np.sqrt(T)
+
+
+    else:
+
+        vega = S * norm.cdf(d1, 0.0, 1.0) * np.sqrt(T)
 
     return vega
 
@@ -29,7 +36,11 @@ def Price(S, K, T, vol, r, iscall): #Returns Black-Scholes' contract price
 
     d2 = D2(d1, T, vol)
 
-    if iscall == 1: #Call price
+    if iscall == 2: #Straddle price
+
+        value = norm.cdf(d1) * S - math.exp(-r * T) * norm.cdf(d2) * K + math.exp(-r * T) * norm.cdf(-d2) * K - norm.cdf(-d1) * S
+
+    elif iscall == 1: #Call price
 
         value = norm.cdf(d1) * S - math.exp(-r*T) * norm.cdf(d2) * K
 
@@ -62,9 +73,9 @@ def Vol(S, K, T, p, r, iscall): #Returns Black-Scholes' implied volatility using
 
         origVol = vol #memory of the cycle's initial value of the volatility
 
-        price = Price(S, K, T, vol, r, iscall) - p #Difference between Black-Scholes's price of the contract considering volatility v and the market price of the contract
+        price = Price(S, K, T, vol, r, iscall) - p  # Difference between Black-Scholes's price of the contract considering volatility v and the market price of the contract
 
-        vega = Vega(S, K, T, r, vol) #Black-Scholes' greek Vega (\partial price / \partial v)
+        vega = Vega(S, K, T, r, vol, iscall)  # Black-Scholes' greek Vega (\partial price / \partial v)
 
         vol = vol - price / vega #Newton-Raphson's step
 

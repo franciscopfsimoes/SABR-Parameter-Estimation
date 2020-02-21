@@ -14,8 +14,6 @@ def preprocess(file):
 
     A = [row.split('\t') for row in clean_lines]
 
-    A = np.delete(A, 0, 1)
-
     dataset = np.array(A)
 
     return dataset

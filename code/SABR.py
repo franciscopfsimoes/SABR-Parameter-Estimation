@@ -34,7 +34,6 @@ def impVol(alpha, beta, rho, Vv, K, f, T): #Returns SABR implied volatility (F.D
 
     z = (Vv/alpha) * ((f * K) ** ((1 - beta) / 2)) * (math.log(f / K))
 
-
     Xz = math.log((math.sqrt(1 - (2 * rho * z) + (z ** 2)) + z - rho) / (1 - rho))
 
     if Xz == 0:
