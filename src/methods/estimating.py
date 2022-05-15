@@ -4,7 +4,7 @@ import math
 from sklearn.linear_model import LinearRegression
 
 # Model specific algorithms
-import sabr
+import methods.sabr
 
 
 def foward(S, mu, T):

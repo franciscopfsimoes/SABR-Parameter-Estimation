@@ -7,9 +7,7 @@ import math
 import random
 import scipy
 import scipy.stats
-import black
-import sabr
-import estimating
+from methods import black, sabr, estimating
 
 
 def foward(S, mu, T):
