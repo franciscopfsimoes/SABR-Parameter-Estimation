@@ -3,8 +3,7 @@ import numpy as np
 import math
 from sklearn.linear_model import LinearRegression
 
-import methods.sabr
-
+import methods.sabr as sabr
 def foward(S, mu, T):
     f = S * math.exp(mu * T)
     return f
@@ -42,7 +41,7 @@ def ARV(beta, strike, fprice, duration, vol):
             for Vv in np.arange(Vvlb, Vvub, Vvstep):
                 sum = 0
                 for i in range(len(vol)):
-                    est = SABR.impVol(
+                    est = sabr.impVol(
                         alpha, beta, rho, Vv, strike[i], fprice[i], duration[i]
                     )
 

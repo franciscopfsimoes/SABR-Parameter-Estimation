@@ -2,4 +2,6 @@ matplotlib
 numpy
 scipy
 sklearn
+hydra-core
+omegaconf
 

@@ -1,0 +1,4 @@
+defaults:
+    - parameters: 1T1000f 
+    - montecarlo: standard
+

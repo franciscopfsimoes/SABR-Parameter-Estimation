@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import cProfile
+import hydra
+from omegaconf import DictConfig
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -26,8 +27,8 @@ def corrNum(rho):
     return (z1, z2)
 
 
-def sabrpathSim(numSteps, T, f0, alpha, beta, rho, Vv):
-    dt = float(T) / float(numSteps)
+def sabrpathSim(num_steps, T, f0, alpha, beta, rho, Vv):
+    dt = float(T) / float(num_steps)
     sqrtdt = float(math.sqrt(dt))
     f = []
     vol = []
@@ -35,7 +36,7 @@ def sabrpathSim(numSteps, T, f0, alpha, beta, rho, Vv):
     ft = f0
     alphat = alpha
     step = 1
-    while step < numSteps:
+    while step < num_steps:
         z = corrNum(rho)
         dWf = float(z[0]) * sqrtdt
         dWa = float(z[1]) * sqrtdt
@@ -48,13 +49,13 @@ def sabrpathSim(numSteps, T, f0, alpha, beta, rho, Vv):
     return (f, vol)  # returns paths as lists
 
 
-def sabrfowardSim(numSteps, T, f0, alpha, beta, rho, Vv):
-    dt = float(T) / float(numSteps)
+def sabrfowardSim(num_steps, T, f0, alpha, beta, rho, Vv):
+    dt = float(T) / float(num_steps)
     sqrtdt = float(math.sqrt(dt))
     ft = f0
     alphat = alpha
     step = 0
-    while step < numSteps:
+    while step < num_steps:
         z = corrNum(rho)
         ft = ft + alphat * math.pow(abs(ft), beta) * float(z[0]) * sqrtdt
         alphat = alphat + alphat * Vv * float(z[1]) * sqrtdt
@@ -62,9 +63,9 @@ def sabrfowardSim(numSteps, T, f0, alpha, beta, rho, Vv):
     return ft
 
 
-def pathPlot(numSteps, path):
+def pathPlot(num_steps, path):
     t = 0
-    while t < numSteps:
+    while t < num_steps:
         ax1 = plt.subplot(211)
         plt.plot(t, path[0][t], "bs")
         plt.setp(ax1.get_xticklabels(), visible=False)
@@ -81,11 +82,11 @@ def randStrike(f0):
     return K
 
 
-def intervalStrike(f0, numquotes):
-    dK = float(2.0 * f0 / (numquotes - 1))
+def intervalStrike(f0, num_quotes):
+    dK = float(2.0 * f0 / (num_quotes - 1))
     K = []
     i = 0
-    while i < numquotes:
+    while i < num_quotes:
         K.append(0.5 * f0 + i * dK)
         i += 1
     return K
@@ -99,19 +100,19 @@ def randputOrCall():
     return iscall
 
 
-def dynamicQuotes(T, f0, alpha, beta, rho, Vv, numquotes, time):
-    numSteps = 200
-    interval = time / numquotes
+def dynamicQuotes(T, f0, alpha, beta, rho, Vv, num_quotes, time):
+    num_steps = 200
+    interval = time / num_quotes
     f = []
     vol = []
     duration = []
     strike = []
     type = []
     i = 0
-    while i < numquotes:
-        path = sabrpathSim(numSteps, interval, f0, alpha, beta, rho, Vv)
-        f0 = path[0][numSteps - 1]
-        alpha = path[1][numSteps - 1]
+    while i < num_quotes:
+        path = sabrpathSim(num_steps, interval, f0, alpha, beta, rho, Vv)
+        f0 = path[0][num_steps - 1]
+        alpha = path[1][num_steps - 1]
         f.append(f0)
         vol.append(alpha)
         duration.append(T - (i + 1) * interval)
@@ -121,15 +122,15 @@ def dynamicQuotes(T, f0, alpha, beta, rho, Vv, numquotes, time):
     return f, vol, duration, strike, type
 
 
-def instaTestQuotes(T, f0, alpha, beta, rho, Vv, numquotes):
+def instaTestQuotes(T, f0, alpha, beta, rho, Vv, num_quotes):
     f = []
     vol = []
     duration = []
     strike = []
     type = []
-    k = intervalStrike(f0, numquotes)
+    k = intervalStrike(f0, num_quotes)
     i = 0
-    while i < numquotes:
+    while i < num_quotes:
         f.append(f0)
         vol.append(alpha)
         duration.append(T)
@@ -164,12 +165,12 @@ def confidenceInterval(list, confidence):
     return start, end
 
 
-def expectedValuation(f0, alpha, duration, strike, type, beta, rho, Vv, numSimulations):
+def expectedValuation(f0, alpha, duration, strike, type, beta, rho, Vv, num_simulations):
     i = 0
-    numSteps = 100
+    num_steps = 100
     p = []
-    while i < numSimulations:
-        f = sabrfowardSim(numSteps, duration, f0, alpha, beta, rho, Vv)
+    while i < num_simulations:
+        f = sabrfowardSim(num_steps, duration, f0, alpha, beta, rho, Vv)
         payoff = valueAtMaturity(f, strike, type)
         p.append(payoff)
         i += 1
@@ -178,7 +179,7 @@ def expectedValuation(f0, alpha, duration, strike, type, beta, rho, Vv, numSimul
     return price
 
 
-def getPrice(quote, beta, rho, Vv, numSimulations):
+def getPrice(quote, beta, rho, Vv, num_simulations):
     f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
     price = []
     i = 0
@@ -192,14 +193,14 @@ def getPrice(quote, beta, rho, Vv, numSimulations):
             beta,
             rho,
             Vv,
-            numSimulations,
+            num_simulations,
         )
         price.append(p)
         i += 1
     return price
 
 
-def getPriceSimultaneousQuotes(quote, beta, rho, Vv, numSimulations):
+def getPriceSimultaneousQuotes(quote, beta, rho, Vv, num_simulations):
     f0, vol, duration, strike, type = (
         quote[0][0],
         quote[1][0],
@@ -208,14 +209,14 @@ def getPriceSimultaneousQuotes(quote, beta, rho, Vv, numSimulations):
         quote[4],
     )
     sum = [0] * len(strike)
-    numSteps = 100
+    num_steps = 100
     i = 0
-    while i < numSimulations:
-        f = sabrfowardSim(numSteps, duration, f0, vol, beta, rho, Vv)
+    while i < num_simulations:
+        f = sabrfowardSim(num_steps, duration, f0, vol, beta, rho, Vv)
         for j in np.arange(len(strike)):
             sum[j] = sum[j] + valueAtMaturity(f, strike[j], type[j])
         i += 1
-    price = [s / numSimulations for s in sum]
+    price = [s / num_simulations for s in sum]
     return price
 
 
@@ -314,16 +315,16 @@ def MeanResidualsBS(vol, alpha):
     #############################MAIN FUNCTIONS###############################
 
 
-def ExamplePath(numSteps, T, f0, alpha, beta, rho, Vv):
-    path = sabrpathSim(numSteps, T, f0, alpha, beta, rho, Vv)
-    pathPlot(numSteps, path)
+def ExamplePath(num_steps, T, f0, alpha, beta, rho, Vv):
+    path = sabrpathSim(num_steps, T, f0, alpha, beta, rho, Vv)
+    pathPlot(num_steps, path)
 
 
-def DynamicSimulation(T, f0, alpha, beta, rho, Vv, numquotes, time, numSimulations):
+def DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time, num_simulations):
     quote = dynamicQuotes(
-        T, f0, alpha, beta, rho, Vv, numquotes, time
+        T, f0, alpha, beta, rho, Vv, num_quotes, time
     )  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
-    price = getPrice(quote, beta, rho, Vv, numSimulations, numSimulations)
+    price = getPrice(quote, beta, rho, Vv, num_simulations)
     premium = price
     vol = getVolatility(premium, quote)
     plotQuotes(quote, vol)
@@ -332,12 +333,12 @@ def DynamicSimulation(T, f0, alpha, beta, rho, Vv, numquotes, time, numSimulatio
     plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
 
 
-def TestSimulation(T, f0, alpha, beta, rho, Vv, numquotes, numSimulations):
+def TestSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, num_simulations):
 
     quote = instaTestQuotes(
-        T, f0, alpha, beta, rho, Vv, numquotes
+        T, f0, alpha, beta, rho, Vv, num_quotes
     )  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
-    price = getPriceSimultaneousQuotes(quote, beta, rho, Vv, numSimulations)
+    price = getPriceSimultaneousQuotes(quote, beta, rho, Vv, num_simulations)
     premium = price
     vol = getVolatility(premium, quote)
     plotQuotes(quote, vol)
@@ -377,25 +378,33 @@ def figure3():
     axes.set_xlim([0.04, 0.11])
 
 
-##############################MAIN######################################################
+
+@hydra.main(config_path="conf", config_name="config.yaml")
+def run(cfg):
+
+    T = cfg.parameters.T 
+    f0 = cfg.parameters.f0 
+    alpha = cfg.parameters.alpha 
+    beta = cfg.parameters.beta 
+    rho = cfg.parameters.rho 
+    Vv = cfg.parameters.Vv 
 
 
-numSteps = 1000
+    num_steps = cfg.montecarlo.num_steps 
+    num_quotes = cfg.montecarlo.num_quotes 
+    time_step = cfg.montecarlo.time_step
+    num_simulations = cfg.montecarlo.num_simulations
 
-T, f0, alpha, beta, rho, Vv = 1, 1000, 0.5, 1, -0.4, 0.9
+    #ExamplePath(num_steps, T, f0, alpha, beta, rho, Vv)
 
-# T, f0, alpha, beta, rho, Vv = 1, 0.07, 0.036698, 0.5, 0.098252, 0.599714
+    #DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time_step, num_simulations)
 
-numquotes, time = 20, 1 / 365
-
-numSimulations = 10000
-
-# ExamplePath(numSteps, T, f0, alpha, beta, rho, Vv)
-
-# DynamicSimulation(T, f0, alpha, beta, rho, Vv, numquotes, time, numSimulations)
-
-cProfile.run("TestSimulation(T, f0, alpha, beta, rho, Vv, numquotes, numSimulations)")
+    TestSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, num_simulations)
 
 
-plt.legend(loc="best")
-plt.show()
+    plt.legend(loc="best")
+    plt.show()
+
+
+if __name__ == "__main__":
+    run()
