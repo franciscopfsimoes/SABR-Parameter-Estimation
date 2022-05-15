@@ -11,6 +11,7 @@ import black
 import sabr
 import estimating
 
+
 def foward(S, mu, T):
     f = float(S) * math.exp(mu * T)
     return f
@@ -20,9 +21,10 @@ def spot(f, mu, T):
     S = float(f) * math.exp(-mu * T)
     return S
 
+
 def corrNum(rho):
     z1 = random.gauss(0, 1)
-    z2 = rho * z1 + math.pow((1.0 - math.pow(rho, 2.0)),0.5) * random.gauss(0, 1)
+    z2 = rho * z1 + math.pow((1.0 - math.pow(rho, 2.0)), 0.5) * random.gauss(0, 1)
     return (z1, z2)
 
 
@@ -45,7 +47,8 @@ def sabrpathSim(numSteps, T, f0, alpha, beta, rho, Vv):
         f.append(ft)
         vol.append(alphat)
         step += 1
-    return (f, vol) #returns paths as lists
+    return (f, vol)  # returns paths as lists
+
 
 def sabrfowardSim(numSteps, T, f0, alpha, beta, rho, Vv):
     dt = float(T) / float(numSteps)
@@ -60,6 +63,7 @@ def sabrfowardSim(numSteps, T, f0, alpha, beta, rho, Vv):
         step += 1
     return ft
 
+
 def pathPlot(numSteps, path):
     t = 0
     while t < numSteps:
@@ -72,20 +76,21 @@ def pathPlot(numSteps, path):
         t += 1
     plt.show()
 
+
 def randStrike(f0):
     dK = float(np.random.normal(0, 0.30, 1)) * f0
     K = f0 + dK
     return K
 
+
 def intervalStrike(f0, numquotes):
-    dK = float(2.0 * f0 / (numquotes - 1) )
+    dK = float(2.0 * f0 / (numquotes - 1))
     K = []
     i = 0
     while i < numquotes:
-        K.append(0.5 * f0 + i*dK)
+        K.append(0.5 * f0 + i * dK)
         i += 1
     return K
-
 
 
 def randputOrCall():
@@ -94,6 +99,7 @@ def randputOrCall():
     else:
         iscall = 0
     return iscall
+
 
 def dynamicQuotes(T, f0, alpha, beta, rho, Vv, numquotes, time):
     numSteps = 200
@@ -104,26 +110,41 @@ def dynamicQuotes(T, f0, alpha, beta, rho, Vv, numquotes, time):
     strike = []
     type = []
     i = 0
-    while i < numquotes :
+    while i < numquotes:
         path = sabrpathSim(numSteps, interval, f0, alpha, beta, rho, Vv)
-        f0 = path[0][numSteps - 1]; alpha = path[1][numSteps - 1]
-        f.append(f0); vol.append(alpha); duration.append(T - (i + 1) * interval); strike.append(randStrike(f0)); type.append(randputOrCall())
+        f0 = path[0][numSteps - 1]
+        alpha = path[1][numSteps - 1]
+        f.append(f0)
+        vol.append(alpha)
+        duration.append(T - (i + 1) * interval)
+        strike.append(randStrike(f0))
+        type.append(randputOrCall())
         i += 1
     return f, vol, duration, strike, type
+
 
 def instaTestQuotes(T, f0, alpha, beta, rho, Vv, numquotes):
     f = []
     vol = []
     duration = []
-    strike =[]
+    strike = []
     type = []
     k = intervalStrike(f0, numquotes)
     i = 0
-    while i < numquotes :
-        f.append(f0); vol.append(alpha); duration.append(T); strike.append(k[i]); type.append(0)
-        f.append(f0); vol.append(alpha); duration.append(T); strike.append(k[i]); type.append(1)
+    while i < numquotes:
+        f.append(f0)
+        vol.append(alpha)
+        duration.append(T)
+        strike.append(k[i])
+        type.append(0)
+        f.append(f0)
+        vol.append(alpha)
+        duration.append(T)
+        strike.append(k[i])
+        type.append(1)
         i += 1
     return f, vol, duration, strike, type
+
 
 def valueAtMaturity(f, K, type):
     if type == 0:
@@ -132,7 +153,7 @@ def valueAtMaturity(f, K, type):
     else:
         payoff = max(f - K, 0)
 
-    return  payoff
+    return payoff
 
 
 def confidenceInterval(list, confidence):
@@ -144,12 +165,13 @@ def confidenceInterval(list, confidence):
     end = m + h
     return start, end
 
+
 def expectedValuation(f0, alpha, duration, strike, type, beta, rho, Vv, numSimulations):
     i = 0
     numSteps = 100
     p = []
     while i < numSimulations:
-        f = sabrfowardSim(numSteps, duration, f0, alpha, beta, rho, Vv);
+        f = sabrfowardSim(numSteps, duration, f0, alpha, beta, rho, Vv)
         payoff = valueAtMaturity(f, strike, type)
         p.append(payoff)
         i += 1
@@ -157,18 +179,36 @@ def expectedValuation(f0, alpha, duration, strike, type, beta, rho, Vv, numSimul
     price = np.average(P)
     return price
 
+
 def getPrice(quote, beta, rho, Vv, numSimulations):
     f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
     price = []
     i = 0
     while i < len(f0):
-        p = expectedValuation(f0[i], vol[i], duration[i], strike[i], type[i], beta, rho, Vv, numSimulations)
+        p = expectedValuation(
+            f0[i],
+            vol[i],
+            duration[i],
+            strike[i],
+            type[i],
+            beta,
+            rho,
+            Vv,
+            numSimulations,
+        )
         price.append(p)
         i += 1
     return price
 
+
 def getPriceSimultaneousQuotes(quote, beta, rho, Vv, numSimulations):
-    f0, vol, duration, strike, type = quote[0][0], quote[1][0], quote[2][0], quote[3], quote[4]
+    f0, vol, duration, strike, type = (
+        quote[0][0],
+        quote[1][0],
+        quote[2][0],
+        quote[3],
+        quote[4],
+    )
     sum = [0] * len(strike)
     numSteps = 100
     i = 0
@@ -180,9 +220,12 @@ def getPriceSimultaneousQuotes(quote, beta, rho, Vv, numSimulations):
     price = [s / numSimulations for s in sum]
     return price
 
+
 def volInterval(price, quote):
-    lb = price[1]; ub = price[2]
-    low = getVolatility(lb, quote);high = getVolatility(ub, quote)
+    lb = price[1]
+    ub = price[2]
+    low = getVolatility(lb, quote)
+    high = getVolatility(ub, quote)
     return low, high
 
 
@@ -215,37 +258,40 @@ def NormalizeStrike(quote):
 def plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, f0, T):
     sabrvol = []
     K = []
-    lb = round(0.1*f0); ub = round(2.5*f0)
+    lb = round(0.1 * f0)
+    ub = round(2.5 * f0)
     for k in np.arange(lb, ub, 1):
         vi = sabr.impVol(alpha, beta, rho, Vv, k, f0, T)
         sabrvol.append(vi)
-        K.append(float(k/f0))
-    plt.plot(K, sabrvol, "--", label='theoretical sabr')
+        K.append(float(k / f0))
+    plt.plot(K, sabrvol, "--", label="theoretical sabr")
     axes = plt.gca()
     axes.set_ylim([0, 2])
+
 
 def plotQuotes(quote, vol):
     strike, type = quote[3], quote[4]
     Kf0 = NormalizeStrike(quote)
     for i in np.arange(len(vol)):
         if type[i] == 1:
-            plt.plot(Kf0[i], vol[i], ms = 4, c = 'r', marker = 'o')
+            plt.plot(Kf0[i], vol[i], ms=4, c="r", marker="o")
 
         if type[i] == 0:
-            plt.plot(Kf0[i], vol[i], ms = 4, c = 'b', marker = '^')
+            plt.plot(Kf0[i], vol[i], ms=4, c="b", marker="^")
 
 
 def plotFittedsabrVolSmile(alpha, beta, rho, Vv, f0, T):
     sabrvol = []
     K = []
-    lb = round(0.1 * f0);
+    lb = round(0.1 * f0)
     ub = round(2.5 * f0)
     for k in np.arange(lb, ub, 1):
         vi = sabr.impVol(alpha, beta, rho, Vv, k, f0, T)
         sabrvol.append(vi)
-        K.append(float(k/f0))
+        K.append(float(k / f0))
 
-    plt.plot(K, sabrvol, label='fitted sabr')
+    plt.plot(K, sabrvol, label="fitted sabr")
+
 
 def examplesabrVolSmile(alpha, beta, rho, Vv, f0, T):
     sabrvol = []
@@ -257,7 +303,8 @@ def examplesabrVolSmile(alpha, beta, rho, Vv, f0, T):
         sabrvol.append(vi)
         K.append(k)
 
-    plt.plot(K, sabrvol, label='fitted sabr')
+    plt.plot(K, sabrvol, label="fitted sabr")
+
 
 def MeanResidualsBS(vol, alpha):
     sum = 0
@@ -266,39 +313,44 @@ def MeanResidualsBS(vol, alpha):
     mean = sum / len(vol)
     return mean
 
-
     #############################MAIN FUNCTIONS###############################
 
 
 def ExamplePath(numSteps, T, f0, alpha, beta, rho, Vv):
-    path = sabrpathSim(numSteps, T, f0, alpha, beta, rho, Vv); pathPlot(numSteps, path)
+    path = sabrpathSim(numSteps, T, f0, alpha, beta, rho, Vv)
+    pathPlot(numSteps, path)
+
 
 def DynamicSimulation(T, f0, alpha, beta, rho, Vv, numquotes, time, numSimulations):
-    quote = dynamicQuotes(T, f0, alpha, beta, rho, Vv, numquotes, time)  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
-    price = getPrice(quote, beta, rho, Vv, numSimulations, numSimulations);
+    quote = dynamicQuotes(
+        T, f0, alpha, beta, rho, Vv, numquotes, time
+    )  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
+    price = getPrice(quote, beta, rho, Vv, numSimulations, numSimulations)
     premium = price
-    vol = getVolatility(premium, quote);
-    plotQuotes(quote, vol);
+    vol = getVolatility(premium, quote)
+    plotQuotes(quote, vol)
     plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, f0, T)
-    ARV = getParameters(beta, quote, vol);
+    ARV = getParameters(beta, quote, vol)
     plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
+
 
 def TestSimulation(T, f0, alpha, beta, rho, Vv, numquotes, numSimulations):
 
-    quote = instaTestQuotes(T, f0, alpha, beta, rho, Vv, numquotes)  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
-    price = getPriceSimultaneousQuotes(quote, beta, rho, Vv, numSimulations);
+    quote = instaTestQuotes(
+        T, f0, alpha, beta, rho, Vv, numquotes
+    )  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
+    price = getPriceSimultaneousQuotes(quote, beta, rho, Vv, numSimulations)
     premium = price
-    vol = getVolatility(premium, quote);
-    plotQuotes(quote, vol);
+    vol = getVolatility(premium, quote)
+    plotQuotes(quote, vol)
     plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, f0, T)
 
     if Vv == 0:
-        print(MeanResidualsBS(vol,alpha))
+        print(MeanResidualsBS(vol, alpha))
 
-
-    #print("Fitting sabr...")
-    #ARV = getParameters(beta, quote, vol);
-    #plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
+    # print("Fitting sabr...")
+    # ARV = getParameters(beta, quote, vol);
+    # plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
 
 
 def figure1():
@@ -308,6 +360,7 @@ def figure1():
     axes.set_ylim([0.12, 0.22])
     axes.set_xlim([0.04, 0.11])
 
+
 def figure2():
     examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.065, 1)
     examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.076, 1)
@@ -315,6 +368,7 @@ def figure2():
     axes = plt.gca()
     axes.set_ylim([0.08, 0.22])
     axes.set_xlim([0.04, 0.11])
+
 
 def figure3():
     examplesabrVolSmile(0.13927, 1, -0.06867, 0.5778, 0.065, 1)
@@ -325,32 +379,25 @@ def figure3():
     axes.set_xlim([0.04, 0.11])
 
 
-
-
 ##############################MAIN######################################################
-
 
 
 numSteps = 1000
 
 T, f0, alpha, beta, rho, Vv = 1, 1000, 0.5, 1, -0.4, 0.9
 
-#T, f0, alpha, beta, rho, Vv = 1, 0.07, 0.036698, 0.5, 0.098252, 0.599714
+# T, f0, alpha, beta, rho, Vv = 1, 0.07, 0.036698, 0.5, 0.098252, 0.599714
 
-numquotes, time = 20, 1/365 ;
+numquotes, time = 20, 1 / 365
 
-numSimulations = 10000;
+numSimulations = 10000
 
-#ExamplePath(numSteps, T, f0, alpha, beta, rho, Vv)
+# ExamplePath(numSteps, T, f0, alpha, beta, rho, Vv)
 
-#DynamicSimulation(T, f0, alpha, beta, rho, Vv, numquotes, time, numSimulations)
+# DynamicSimulation(T, f0, alpha, beta, rho, Vv, numquotes, time, numSimulations)
 
-cProfile.run('TestSimulation(T, f0, alpha, beta, rho, Vv, numquotes, numSimulations)')
+cProfile.run("TestSimulation(T, f0, alpha, beta, rho, Vv, numquotes, numSimulations)")
 
 
-plt.legend(loc='best')
+plt.legend(loc="best")
 plt.show()
-
-
-
-

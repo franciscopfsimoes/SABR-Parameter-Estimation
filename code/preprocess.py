@@ -1,11 +1,12 @@
-#Useful Python packages
+# Useful Python packages
 import numpy as np
+
 
 def preprocess(file):
     myfile = open(file, "r")
     dataset = myfile.readlines()
     del dataset[0]
-    clean_lines = [l.strip('\n') for l in dataset]
-    A = [row.split('\t') for row in clean_lines]
+    clean_lines = [l.strip("\n") for l in dataset]
+    A = [row.split("\t") for row in clean_lines]
     dataset = np.array(A)
     return dataset
