@@ -7,9 +7,9 @@ import math
 import random
 import scipy
 import scipy.stats
-import Black
-import SABR
-import Estimating
+import black
+import sabr
+import estimating
 
 def foward(S, mu, T):
     f = float(S) * math.exp(mu * T)
@@ -26,7 +26,7 @@ def corrNum(rho):
     return (z1, z2)
 
 
-def SABRpathSim(numSteps, T, f0, alpha, beta, rho, Vv):
+def sabrpathSim(numSteps, T, f0, alpha, beta, rho, Vv):
     dt = float(T) / float(numSteps)
     sqrtdt = float(math.sqrt(dt))
     f = []
@@ -47,7 +47,7 @@ def SABRpathSim(numSteps, T, f0, alpha, beta, rho, Vv):
         step += 1
     return (f, vol) #returns paths as lists
 
-def SABRfowardSim(numSteps, T, f0, alpha, beta, rho, Vv):
+def sabrfowardSim(numSteps, T, f0, alpha, beta, rho, Vv):
     dt = float(T) / float(numSteps)
     sqrtdt = float(math.sqrt(dt))
     ft = f0
@@ -105,7 +105,7 @@ def dynamicQuotes(T, f0, alpha, beta, rho, Vv, numquotes, time):
     type = []
     i = 0
     while i < numquotes :
-        path = SABRpathSim(numSteps, interval, f0, alpha, beta, rho, Vv)
+        path = sabrpathSim(numSteps, interval, f0, alpha, beta, rho, Vv)
         f0 = path[0][numSteps - 1]; alpha = path[1][numSteps - 1]
         f.append(f0); vol.append(alpha); duration.append(T - (i + 1) * interval); strike.append(randStrike(f0)); type.append(randputOrCall())
         i += 1
@@ -149,7 +149,7 @@ def expectedValuation(f0, alpha, duration, strike, type, beta, rho, Vv, numSimul
     numSteps = 100
     p = []
     while i < numSimulations:
-        f = SABRfowardSim(numSteps, duration, f0, alpha, beta, rho, Vv);
+        f = sabrfowardSim(numSteps, duration, f0, alpha, beta, rho, Vv);
         payoff = valueAtMaturity(f, strike, type)
         p.append(payoff)
         i += 1
@@ -173,7 +173,7 @@ def getPriceSimultaneousQuotes(quote, beta, rho, Vv, numSimulations):
     numSteps = 100
     i = 0
     while i < numSimulations:
-        f = SABRfowardSim(numSteps, duration, f0, vol, beta, rho, Vv)
+        f = sabrfowardSim(numSteps, duration, f0, vol, beta, rho, Vv)
         for j in np.arange(len(strike)):
             sum[j] = sum[j] + valueAtMaturity(f, strike[j], type[j])
         i += 1
@@ -191,7 +191,7 @@ def getVolatility(price, quote):
     f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
     i = 0
     while i < len(f0):
-        v = Black.Vol(f0[i], strike[i], duration[i], price[i], 0, type[i])
+        v = black.Vol(f0[i], strike[i], duration[i], price[i], 0, type[i])
         V.append(v)
         i += 1
     return V
@@ -199,7 +199,7 @@ def getVolatility(price, quote):
 
 def getParameters(beta, quote, vol):
     f0, duration, strike = quote[0], quote[2], quote[3]
-    optarv = Estimating.ARV(beta, strike, f0, duration, vol)
+    optarv = estimating.ARV(beta, strike, f0, duration, vol)
     return optarv
 
 
@@ -212,15 +212,15 @@ def NormalizeStrike(quote):
     return Kf0
 
 
-def plotTheoreticalSABRVolSmile(alpha, beta, rho, Vv, f0, T):
+def plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, f0, T):
     sabrvol = []
     K = []
     lb = round(0.1*f0); ub = round(2.5*f0)
     for k in np.arange(lb, ub, 1):
-        vi = SABR.impVol(alpha, beta, rho, Vv, k, f0, T)
+        vi = sabr.impVol(alpha, beta, rho, Vv, k, f0, T)
         sabrvol.append(vi)
         K.append(float(k/f0))
-    plt.plot(K, sabrvol, "--", label='theoretical SABR')
+    plt.plot(K, sabrvol, "--", label='theoretical sabr')
     axes = plt.gca()
     axes.set_ylim([0, 2])
 
@@ -235,29 +235,29 @@ def plotQuotes(quote, vol):
             plt.plot(Kf0[i], vol[i], ms = 4, c = 'b', marker = '^')
 
 
-def plotFittedSABRVolSmile(alpha, beta, rho, Vv, f0, T):
+def plotFittedsabrVolSmile(alpha, beta, rho, Vv, f0, T):
     sabrvol = []
     K = []
     lb = round(0.1 * f0);
     ub = round(2.5 * f0)
     for k in np.arange(lb, ub, 1):
-        vi = SABR.impVol(alpha, beta, rho, Vv, k, f0, T)
+        vi = sabr.impVol(alpha, beta, rho, Vv, k, f0, T)
         sabrvol.append(vi)
         K.append(float(k/f0))
 
-    plt.plot(K, sabrvol, label='fitted SABR')
+    plt.plot(K, sabrvol, label='fitted sabr')
 
-def exampleSABRVolSmile(alpha, beta, rho, Vv, f0, T):
+def examplesabrVolSmile(alpha, beta, rho, Vv, f0, T):
     sabrvol = []
     K = []
     lb = 0.03
     ub = 0.15
     for k in np.linspace(lb, ub, 10000):
-        vi = SABR.impVol(alpha, beta, rho, Vv, k, f0, T)
+        vi = sabr.impVol(alpha, beta, rho, Vv, k, f0, T)
         sabrvol.append(vi)
         K.append(k)
 
-    plt.plot(K, sabrvol, label='fitted SABR')
+    plt.plot(K, sabrvol, label='fitted sabr')
 
 def MeanResidualsBS(vol, alpha):
     sum = 0
@@ -271,7 +271,7 @@ def MeanResidualsBS(vol, alpha):
 
 
 def ExamplePath(numSteps, T, f0, alpha, beta, rho, Vv):
-    path = SABRpathSim(numSteps, T, f0, alpha, beta, rho, Vv); pathPlot(numSteps, path)
+    path = sabrpathSim(numSteps, T, f0, alpha, beta, rho, Vv); pathPlot(numSteps, path)
 
 def DynamicSimulation(T, f0, alpha, beta, rho, Vv, numquotes, time, numSimulations):
     quote = dynamicQuotes(T, f0, alpha, beta, rho, Vv, numquotes, time)  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
@@ -279,9 +279,9 @@ def DynamicSimulation(T, f0, alpha, beta, rho, Vv, numquotes, time, numSimulatio
     premium = price
     vol = getVolatility(premium, quote);
     plotQuotes(quote, vol);
-    plotTheoreticalSABRVolSmile(alpha, beta, rho, Vv, f0, T)
+    plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, f0, T)
     ARV = getParameters(beta, quote, vol);
-    plotFittedSABRVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
+    plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
 
 def TestSimulation(T, f0, alpha, beta, rho, Vv, numquotes, numSimulations):
 
@@ -290,36 +290,36 @@ def TestSimulation(T, f0, alpha, beta, rho, Vv, numquotes, numSimulations):
     premium = price
     vol = getVolatility(premium, quote);
     plotQuotes(quote, vol);
-    plotTheoreticalSABRVolSmile(alpha, beta, rho, Vv, f0, T)
+    plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, f0, T)
 
     if Vv == 0:
         print(MeanResidualsBS(vol,alpha))
 
 
-    #print("Fitting SABR...")
+    #print("Fitting sabr...")
     #ARV = getParameters(beta, quote, vol);
-    #plotFittedSABRVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
+    #plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
 
 
 def figure1():
-    exampleSABRVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.07, 0)
-    exampleSABRVolSmile(0.037561, 0.5, 0.100044, 0.573296, 0.07, 0)
+    examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.07, 0)
+    examplesabrVolSmile(0.037561, 0.5, 0.100044, 0.573296, 0.07, 0)
     axes = plt.gca()
     axes.set_ylim([0.12, 0.22])
     axes.set_xlim([0.04, 0.11])
 
 def figure2():
-    exampleSABRVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.065, 1)
-    exampleSABRVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.076, 1)
-    exampleSABRVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.088, 1)
+    examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.065, 1)
+    examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.076, 1)
+    examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.088, 1)
     axes = plt.gca()
     axes.set_ylim([0.08, 0.22])
     axes.set_xlim([0.04, 0.11])
 
 def figure3():
-    exampleSABRVolSmile(0.13927, 1, -0.06867, 0.5778, 0.065, 1)
-    exampleSABRVolSmile(0.13927, 1, -0.06867, 0.5778, 0.076, 1)
-    exampleSABRVolSmile(0.13927, 1, -0.06867, 0.5778, 0.088, 1)
+    examplesabrVolSmile(0.13927, 1, -0.06867, 0.5778, 0.065, 1)
+    examplesabrVolSmile(0.13927, 1, -0.06867, 0.5778, 0.076, 1)
+    examplesabrVolSmile(0.13927, 1, -0.06867, 0.5778, 0.088, 1)
     axes = plt.gca()
     axes.set_ylim([0.08, 0.22])
     axes.set_xlim([0.04, 0.11])
