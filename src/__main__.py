@@ -9,16 +9,12 @@ import random
 import scipy
 import scipy.stats
 from methods import black, sabr, estimating
+from Derivative import *
 
 
 def foward(S, mu, T):
     f = float(S) * math.exp(mu * T)
     return f
-
-
-def spot(f, mu, T):
-    S = float(f) * math.exp(-mu * T)
-    return S
 
 
 def corrNum(rho):
@@ -122,23 +118,23 @@ def dynamicQuotes(T, f0, alpha, beta, rho, Vv, num_quotes, time):
     return f, vol, duration, strike, type
 
 
-def instaTestQuotes(T, f0, alpha, beta, rho, Vv, num_quotes):
+def instaTestQuotes(derivative, alpha, beta, rho, Vv, num_quotes):
     f = []
     vol = []
     duration = []
     strike = []
     type = []
-    k = intervalStrike(f0, num_quotes)
+    k = intervalStrike(derivative.f0, num_quotes)
     i = 0
     while i < num_quotes:
-        f.append(f0)
+        f.append(derivative.f0)
         vol.append(alpha)
-        duration.append(T)
+        duration.append(derivative.T)
         strike.append(k[i])
         type.append(0)
-        f.append(f0)
+        f.append(derivative.f0)
         vol.append(alpha)
-        duration.append(T)
+        duration.append(derivative.T)
         strike.append(k[i])
         type.append(1)
         i += 1
@@ -333,16 +329,16 @@ def DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time, num_simulat
     plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
 
 
-def TestSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, num_simulations):
+def TestSimulation(derivative, alpha, beta, rho, Vv, num_quotes, num_simulations):
 
     quote = instaTestQuotes(
-        T, f0, alpha, beta, rho, Vv, num_quotes
+        derivative, alpha, beta, rho, Vv, num_quotes
     )  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
     price = getPriceSimultaneousQuotes(quote, beta, rho, Vv, num_simulations)
     premium = price
     vol = getVolatility(premium, quote)
     plotQuotes(quote, vol)
-    plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, f0, T)
+    plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, derivative.f0, derivative.T)
 
     if Vv == 0:
         print(MeanResidualsBS(vol, alpha))
@@ -350,34 +346,6 @@ def TestSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, num_simulations):
     # print("Fitting sabr...")
     # ARV = getParameters(beta, quote, vol);
     # plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
-
-
-def figure1():
-    examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.07, 0)
-    examplesabrVolSmile(0.037561, 0.5, 0.100044, 0.573296, 0.07, 0)
-    axes = plt.gca()
-    axes.set_ylim([0.12, 0.22])
-    axes.set_xlim([0.04, 0.11])
-
-
-def figure2():
-    examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.065, 1)
-    examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.076, 1)
-    examplesabrVolSmile(0.036698, 0.5, 0.098252, 0.599714, 0.088, 1)
-    axes = plt.gca()
-    axes.set_ylim([0.08, 0.22])
-    axes.set_xlim([0.04, 0.11])
-
-
-def figure3():
-    examplesabrVolSmile(0.13927, 1, -0.06867, 0.5778, 0.065, 1)
-    examplesabrVolSmile(0.13927, 1, -0.06867, 0.5778, 0.076, 1)
-    examplesabrVolSmile(0.13927, 1, -0.06867, 0.5778, 0.088, 1)
-    axes = plt.gca()
-    axes.set_ylim([0.08, 0.22])
-    axes.set_xlim([0.04, 0.11])
-
-
 
 @hydra.main(config_path="conf", config_name="config.yaml")
 def run(cfg):
@@ -389,7 +357,7 @@ def run(cfg):
     rho = cfg.parameters.rho 
     Vv = cfg.parameters.Vv 
 
-
+    derivative = Derivative(T, f0)
     num_steps = cfg.montecarlo.num_steps 
     num_quotes = cfg.montecarlo.num_quotes 
     time_step = cfg.montecarlo.time_step
@@ -399,7 +367,7 @@ def run(cfg):
 
     #DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time_step, num_simulations)
 
-    TestSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, num_simulations)
+    TestSimulation(derivative, alpha, beta, rho, Vv, num_quotes, num_simulations)
 
 
     plt.legend(loc="best")
