@@ -9,7 +9,10 @@ import random
 import scipy
 import scipy.stats
 from methods import black, sabr, estimating
+
 from classes.Derivative import *
+from classes.MonteCarlo import * 
+
 def foward(S, mu, T):
     f = float(S) * math.exp(mu * T)
     return f
@@ -327,12 +330,12 @@ def DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time, num_simulat
     plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
 
 
-def TestSimulation(derivative, alpha, beta, rho, Vv, num_quotes, num_simulations):
+def TestSimulation(derivative, alpha, beta, rho, Vv, num_quotes, monte_carlo):
 
     quote = instaTestQuotes(
         derivative, alpha, beta, rho, Vv, num_quotes
     )  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
-    price = getPriceSimultaneousQuotes(quote, beta, rho, Vv, num_simulations)
+    price = getPriceSimultaneousQuotes(quote, beta, rho, Vv, monte_carlo.num_simulations)
     premium = price
     vol = getVolatility(premium, quote)
     plotQuotes(quote, vol)
@@ -354,16 +357,13 @@ def run(cfg):
     rho = cfg.parameters.rho 
     Vv = cfg.parameters.Vv 
 
-    num_steps = cfg.montecarlo.num_steps 
-    num_quotes = cfg.montecarlo.num_quotes 
-    time_step = cfg.montecarlo.time_step
-    num_simulations = cfg.montecarlo.num_simulations
+    monte_carlo = MonteCarlo(cfg.montecarlo.num_steps, cfg.montecarlo.num_simulations, cfg.montecarlo.time_step )
 
     #ExamplePath(num_steps, T, f0, alpha, beta, rho, Vv)
 
     #DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time_step, num_simulations)
 
-    TestSimulation(derivative, alpha, beta, rho, Vv, num_quotes, num_simulations)
+    TestSimulation(derivative, alpha, beta, rho, Vv, cfg.montecarlo.num_quotes, monte_carlo)
 
 
     plt.legend(loc="best")
