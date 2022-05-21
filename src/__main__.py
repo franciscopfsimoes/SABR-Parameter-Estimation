@@ -12,6 +12,7 @@ from methods import black, sabr, estimating
 
 from classes.Derivative import *
 from classes.MonteCarlo import * 
+from classes.SABR import *
 
 def foward(S, mu, T):
     f = float(S) * math.exp(mu * T)
@@ -46,11 +47,14 @@ def sabrpathSim(num_steps, T, f0, alpha, beta, rho, Vv):
     return (f, vol)  # returns paths as lists
 
 
-def sabrfowardSim(num_steps, T, f0, alpha, beta, rho, Vv):
+def sabrfowardSim(num_steps, T, f0, alpha, sabr_params):
     dt = float(T) / float(num_steps)
     sqrtdt = float(math.sqrt(dt))
     ft = f0
     alphat = alpha
+    beta = sabr_params.beta
+    rho = sabr_params.rho
+    Vv = sabr_params.Vv
     step = 0
     while step < num_steps:
         z = corrNum(rho)
@@ -119,7 +123,7 @@ def dynamicQuotes(T, f0, alpha, beta, rho, Vv, num_quotes, time):
     return f, vol, duration, strike, type
 
 
-def instaTestQuotes(derivative, alpha, beta, rho, Vv, num_quotes):
+def instaTestQuotes(derivative, sabr_params, num_quotes):
     f = []
     vol = []
     duration = []
@@ -129,12 +133,12 @@ def instaTestQuotes(derivative, alpha, beta, rho, Vv, num_quotes):
     i = 0
     while i < num_quotes:
         f.append(derivative.f0)
-        vol.append(alpha)
+        vol.append(sabr_params.alpha)
         duration.append(derivative.T)
         strike.append(k[i])
         type.append(0)
         f.append(derivative.f0)
-        vol.append(alpha)
+        vol.append(sabr_params.alpha)
         duration.append(derivative.T)
         strike.append(k[i])
         type.append(1)
@@ -197,7 +201,7 @@ def getPrice(quote, beta, rho, Vv, num_simulations):
     return price
 
 
-def getPriceSimultaneousQuotes(quote, beta, rho, Vv, num_simulations):
+def getPriceSimultaneousQuotes(quote, sabr_params, num_simulations):
     f0, vol, duration, strike, type = (
         quote[0][0],
         quote[1][0],
@@ -209,7 +213,7 @@ def getPriceSimultaneousQuotes(quote, beta, rho, Vv, num_simulations):
     num_steps = 100
     i = 0
     while i < num_simulations:
-        f = sabrfowardSim(num_steps, duration, f0, vol, beta, rho, Vv)
+        f = sabrfowardSim(num_steps, duration, f0, vol, sabr_params)
         for j in np.arange(len(strike)):
             sum[j] = sum[j] + valueAtMaturity(f, strike[j], type[j])
         i += 1
@@ -251,15 +255,16 @@ def NormalizeStrike(quote):
     return Kf0
 
 
-def plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, f0, T):
+def plotTheoreticalsabrVolSmile(sabr_params, derivative):
     sabrvol = []
     K = []
-    lb = round(0.1 * f0)
-    ub = round(2.5 * f0)
+    lb = round(0.1 * derivative.f0)
+    ub = round(2.5 * derivative.f0)
     for k in np.arange(lb, ub, 1):
-        vi = sabr.impVol(alpha, beta, rho, Vv, k, f0, T)
+        derivative.k = k
+        vi = sabr.impVol(sabr_params, derivative)
         sabrvol.append(vi)
-        K.append(float(k / f0))
+        K.append(float(derivative.k / derivative.f0))
     plt.plot(K, sabrvol, "--", label="theoretical sabr")
     axes = plt.gca()
     axes.set_ylim([0, 2])
@@ -330,19 +335,19 @@ def DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time, num_simulat
     plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
 
 
-def TestSimulation(derivative, alpha, beta, rho, Vv, num_quotes, monte_carlo):
+def TestSimulation(derivative, sabr_params, num_quotes, monte_carlo):
 
     quote = instaTestQuotes(
-        derivative, alpha, beta, rho, Vv, num_quotes
+        derivative, sabr_params, num_quotes
     )  # f0, vol, duration, strike, type = quote[0], quote[1], quote[2], quote[3], quote[4]
-    price = getPriceSimultaneousQuotes(quote, beta, rho, Vv, monte_carlo.num_simulations)
+    price = getPriceSimultaneousQuotes(quote, sabr_params, monte_carlo.num_simulations)
     premium = price
     vol = getVolatility(premium, quote)
     plotQuotes(quote, vol)
-    plotTheoreticalsabrVolSmile(alpha, beta, rho, Vv, derivative.f0, derivative.T)
+    plotTheoreticalsabrVolSmile(sabr_params, derivative)
 
-    if Vv == 0:
-        print(MeanResidualsBS(vol, alpha))
+    if sabr_params.Vv == 0:
+        print(MeanResidualsBS(vol, sabr_params.alpha))
 
     # print("Fitting sabr...")
     # ARV = getParameters(beta, quote, vol);
@@ -352,18 +357,14 @@ def TestSimulation(derivative, alpha, beta, rho, Vv, num_quotes, monte_carlo):
 def run(cfg):
 
     derivative = Derivative(cfg.parameters.T, cfg.parameters.f0)
-    alpha = cfg.parameters.alpha 
-    beta = cfg.parameters.beta 
-    rho = cfg.parameters.rho 
-    Vv = cfg.parameters.Vv 
-
+    sabr_params = SABR(cfg.parameters.alpha, cfg.parameters.beta, cfg.parameters.rho, cfg.parameters.Vv)
     monte_carlo = MonteCarlo(cfg.montecarlo.num_steps, cfg.montecarlo.num_simulations, cfg.montecarlo.time_step )
 
     #ExamplePath(num_steps, T, f0, alpha, beta, rho, Vv)
 
     #DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time_step, num_simulations)
 
-    TestSimulation(derivative, alpha, beta, rho, Vv, cfg.montecarlo.num_quotes, monte_carlo)
+    TestSimulation(derivative, sabr_params, cfg.montecarlo.num_quotes, monte_carlo)
 
 
     plt.legend(loc="best")
