@@ -9,9 +9,7 @@ import random
 import scipy
 import scipy.stats
 from methods import black, sabr, estimating
-from Derivative import *
-
-
+from classes.Derivative import *
 def foward(S, mu, T):
     f = float(S) * math.exp(mu * T)
     return f
@@ -350,14 +348,12 @@ def TestSimulation(derivative, alpha, beta, rho, Vv, num_quotes, num_simulations
 @hydra.main(config_path="conf", config_name="config.yaml")
 def run(cfg):
 
-    T = cfg.parameters.T 
-    f0 = cfg.parameters.f0 
+    derivative = Derivative(cfg.parameters.T, cfg.parameters.f0)
     alpha = cfg.parameters.alpha 
     beta = cfg.parameters.beta 
     rho = cfg.parameters.rho 
     Vv = cfg.parameters.Vv 
 
-    derivative = Derivative(T, f0)
     num_steps = cfg.montecarlo.num_steps 
     num_quotes = cfg.montecarlo.num_quotes 
     time_step = cfg.montecarlo.time_step
