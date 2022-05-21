@@ -1,4 +1,11 @@
 defaults:
+    - _self_
     - parameters: 1T1000f 
     - montecarlo: standard
+    - override hydra/hydra_logging: disabled
+    - override hydra/job_logging: disabled
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .
 
