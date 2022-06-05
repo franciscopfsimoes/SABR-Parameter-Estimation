@@ -24,8 +24,8 @@ Pull requests are welcome. The project is still under development by me.
 [MIT](https://choosealicense.com/licenses/mit/)
 
 
-## Brief description of
-All principal functions are located inside the __main__.py file.
+## Brief description 
+All principal functions are located inside the \_\_main\_\_.py file.
 
 The Data.txt file consists of only European Put contracts of day 12-12-2019 and maturity 15-12-2019. 
 It is used as training data for the SABR parameter estimating algorithm.
