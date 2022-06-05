@@ -4,6 +4,8 @@ import math
 from sklearn.linear_model import LinearRegression
 
 import methods.sabr as sabr
+
+
 def foward(S, mu, T):
     f = S * math.exp(mu * T)
     return f
@@ -12,6 +14,7 @@ def foward(S, mu, T):
 def spot(f, mu, T):
     S = f * math.exp(-mu * T)
     return S
+
 
 ######################################Estimating alpha, rho and Vv############################
 
@@ -60,7 +63,7 @@ def ARV(beta, strike, fprice, duration, vol):
     return opt
 
 
-def B(vol, fprice, S0K):  
+def B(vol, fprice, S0K):
     ########################################Estimating beta########################################
     lvNtm = []  # log Near-The-Money volatility
     lfNtm = []  # log Near-The-Money foward price

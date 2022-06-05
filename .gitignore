@@ -2,3 +2,4 @@ env/
 *.swp
 src/__pycache__/
 src/outputs
+*/__pycache__

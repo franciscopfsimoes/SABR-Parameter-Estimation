@@ -27,7 +27,7 @@ def B2(beta, f, K):
 
 
 def impVol(
-    sabr_params, derivative 
+    sabr_params, derivative
 ):  # Returns SABR implied volatility (F.D.Rouah algorithm)
 
     alpha = sabr_params.alpha

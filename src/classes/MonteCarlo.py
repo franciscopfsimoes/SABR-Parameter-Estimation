@@ -3,5 +3,3 @@ class MonteCarlo:
         self.num_steps = num_steps
         self.num_simulations = num_simulations
         self.time_step = time_step
-
-

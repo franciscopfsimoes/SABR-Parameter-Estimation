@@ -11,8 +11,9 @@ import scipy.stats
 from methods import black, sabr, estimating
 
 from classes.Derivative import *
-from classes.MonteCarlo import * 
+from classes.MonteCarlo import *
 from classes.SABR import *
+
 
 def foward(S, mu, T):
     f = float(S) * math.exp(mu * T)
@@ -166,7 +167,9 @@ def confidenceInterval(list, confidence):
     return start, end
 
 
-def expectedValuation(f0, alpha, duration, strike, type, beta, rho, Vv, num_simulations):
+def expectedValuation(
+    f0, alpha, duration, strike, type, beta, rho, Vv, num_simulations
+):
     i = 0
     num_steps = 100
     p = []
@@ -353,19 +356,25 @@ def TestSimulation(derivative, sabr_params, num_quotes, monte_carlo):
     # ARV = getParameters(beta, quote, vol);
     # plotFittedsabrVolSmile(ARV[0], beta, ARV[1], ARV[2], f0, T)
 
-@hydra.main(config_path="conf", config_name="config.yaml")
+
+@hydra.main(version_base=None, config_path="conf", config_name="config.yaml")
 def run(cfg):
 
     derivative = Derivative(cfg.parameters.T, cfg.parameters.f0)
-    sabr_params = SABR(cfg.parameters.alpha, cfg.parameters.beta, cfg.parameters.rho, cfg.parameters.Vv)
-    monte_carlo = MonteCarlo(cfg.montecarlo.num_steps, cfg.montecarlo.num_simulations, cfg.montecarlo.time_step )
+    sabr_params = SABR(
+        cfg.parameters.alpha, cfg.parameters.beta, cfg.parameters.rho, cfg.parameters.Vv
+    )
+    monte_carlo = MonteCarlo(
+        cfg.montecarlo.num_steps,
+        cfg.montecarlo.num_simulations,
+        cfg.montecarlo.time_step,
+    )
 
-    #ExamplePath(num_steps, T, f0, alpha, beta, rho, Vv)
+    # ExamplePath(num_steps, T, f0, alpha, beta, rho, Vv)
 
-    #DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time_step, num_simulations)
+    # DynamicSimulation(T, f0, alpha, beta, rho, Vv, num_quotes, time_step, num_simulations)
 
     TestSimulation(derivative, sabr_params, cfg.montecarlo.num_quotes, monte_carlo)
-
 
     plt.legend(loc="best")
     plt.show()
